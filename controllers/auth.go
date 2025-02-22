@@ -43,20 +43,34 @@ func InitializeAuthRoutes(r *gin.Engine, dbClient *mongo.Client, authController 
 func (ac *AuthController) registerUser(c *gin.Context) {
 	logrus.Info("Attempting to register a new user")
 
+	var user models.User
+	if err := c.ShouldBindJSON(&user); err != nil {
+		logrus.Errorf("Failed to bind JSON: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request payload"})
+		return
+	}
+
+	// Check if all required fields are provided
+	if user.Username == "" || user.Password == "" || user.Email == "" {
+		logrus.Error("All fields (username, password, email) must be provided")
+		c.JSON(http.StatusBadRequest, gin.H{"error": "All fields (username, password, email) must be provided"})
+		return
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+	if err != nil {
+		logrus.Errorf("Failed to hash password: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
+		return
+	}
+
+	user.Password = string(hashedPassword)
+	user.ID = primitive.NewObjectID()
+	user.IsAdmin = false // Default to false
+
 	collection := authClient.Database("users").Collection("authentication") // Use the local client variable
 
-	var user models.User
 	ac.pm.Execute(func() (interface{}, error) {
-		if err := c.ShouldBindJSON(&user); err != nil {
-			return nil, err
-		}
-		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
-		if err != nil {
-			return nil, err
-		}
-		user.Password = string(hashedPassword)
-		user.ID = primitive.NewObjectID()
-		user.IsAdmin = false // Default to false
 		return collection.InsertOne(context.TODO(), user)
 	}, "Failed to register user")
 
@@ -111,7 +125,8 @@ func (ac *AuthController) resetPassword(c *gin.Context) {
 	logrus.Info("Attempting to handle forget password request")
 
 	type ResetPasswordRequest struct {
-		Email string `json:"email"`
+		Email    string `json:"email"`
+		Username string `json:"username"`
 	}
 
 	var request ResetPasswordRequest
@@ -121,18 +136,18 @@ func (ac *AuthController) resetPassword(c *gin.Context) {
 		return
 	}
 
-	logrus.Infof("Received reset password request for email: %s", request.Email)
+	logrus.Infof("Received reset password request for email: %s, username: %s", request.Email, request.Username)
 
 	collection := authClient.Database("users").Collection("authentication")
 
 	var user models.User
 	ac.pm.Execute(func() (interface{}, error) {
-		err := collection.FindOne(context.TODO(), bson.M{"email": request.Email}).Decode(&user)
+		err := collection.FindOne(context.TODO(), bson.M{"email": request.Email, "username": request.Username}).Decode(&user)
 		return user, err
-	}, "Failed to find user by email")
+	}, "Failed to find user by email and username")
 	if user == (models.User{}) {
-		logrus.Warnf("Email not found: %s", request.Email)
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Email not found"})
+		logrus.Warnf("Email or username not found: %s, %s", request.Email, request.Username)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Email or username not found"})
 		return
 	}
 

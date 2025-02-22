@@ -19,6 +19,7 @@ func HandleError(err error, errorMessage string) {
 				isFatal = true
 				break
 			}
+
 		}
 
 		if isFatal {
