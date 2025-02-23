@@ -2,8 +2,6 @@ package controllers
 
 import (
 	"context"
-	"crypto/rand"
-	"encoding/base64"
 	"fmt"
 	"net/http"
 	"omhs-backend/models"
@@ -18,9 +16,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-var (
-	authClient *mongo.Client
-)
+var authClient *mongo.Client
 
 type AuthController struct {
 	pm *utils.ProjectManager
@@ -102,7 +98,7 @@ func (ac *AuthController) loginUser(c *gin.Context) {
 	token := user.Token
 	// Check if last login was more than 48 hours ago
 	if time.Since(user.LastLogin) > 48*time.Hour {
-		token, err = generateToken()
+		token, err = utils.GenerateToken()
 		if err != nil {
 			logrus.Errorf("Failed to generate token: %v", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token", "details": err.Error()})
@@ -151,7 +147,7 @@ func (ac *AuthController) resetPassword(c *gin.Context) {
 		return
 	}
 
-	passkey, err := generatePasskey()
+	passkey, err := utils.GeneratePasskey()
 	if err != nil {
 		logrus.Errorf("Failed to generate passkey: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate passkey", "details": err.Error()})
@@ -264,28 +260,4 @@ func (ac *AuthController) isPasskeyValid(user models.User) bool {
 		return false
 	}
 	return true
-}
-
-func generateToken() (string, error) {
-	b := make([]byte, 32)
-	_, err := rand.Read(b)
-	if err != nil {
-		logrus.Errorf("Failed to generate token: %v", err)
-		return "", err
-	}
-	return base64.URLEncoding.EncodeToString(b), nil
-}
-
-func generatePasskey() (string, error) {
-	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-	b := make([]byte, 6)
-	_, err := rand.Read(b)
-	if err != nil {
-		logrus.Errorf("Failed to generate passkey: %v", err)
-		return "", err
-	}
-	for i := range b {
-		b[i] = charset[b[i]%byte(len(charset))]
-	}
-	return string(b), nil
 }

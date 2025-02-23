@@ -1,31 +1,32 @@
 package utils
 
 import (
-	"strings"
+	"crypto/rand"
+	"encoding/base64"
 
 	"github.com/sirupsen/logrus"
 )
 
-// HandleError is a generic function to handle errors and log them
-func HandleError(err error, errorMessage string) {
+func GenerateToken() (string, error) {
+	b := make([]byte, 32)
+	_, err := rand.Read(b)
 	if err != nil {
-		// Define conditions for fatal errors
-		fatalConditions := []string{"fatal", "connect", "ping"}
-
-		// Check if the error message contains any fatal conditions
-		isFatal := false
-		for _, condition := range fatalConditions {
-			if strings.Contains(strings.ToLower(errorMessage), condition) {
-				isFatal = true
-				break
-			}
-
-		}
-
-		if isFatal {
-			logrus.Fatalf("%s: %v", errorMessage, err)
-		} else {
-			logrus.Errorf("%s: %v", errorMessage, err)
-		}
+		logrus.Errorf("Failed to generate token: %v", err)
+		return "", err
 	}
+	return base64.URLEncoding.EncodeToString(b), nil
+}
+
+func GeneratePasskey() (string, error) {
+	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	b := make([]byte, 6)
+	_, err := rand.Read(b)
+	if err != nil {
+		logrus.Errorf("Failed to generate passkey: %v", err)
+		return "", err
+	}
+	for i := range b {
+		b[i] = charset[b[i]%byte(len(charset))]
+	}
+	return string(b), nil
 }
