@@ -1,1 +1,36 @@
+# Environment variables
 .env
+
+# Dependency directories
+vendor/
+Godeps/
+
+# Build directories
+bin/
+pkg/
+tmp_fresh/
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*~
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Go build artifacts
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Log files
+*.log
+
+# Coverage files
+*.coverprofile
