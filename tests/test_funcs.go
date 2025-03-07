@@ -6,10 +6,14 @@ import (
 	"math/rand"
 	"net/http"
 	"net/http/httptest"
+	"omhs-backend/controllers"
+	"omhs-backend/utils"
+	"os"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 func generateRandomString(n int) string {
@@ -98,4 +102,30 @@ func GetPasskey(router *gin.Engine, database, collection, userID, adminToken str
 
 	logrus.Infof("Get Document Response: %s", getRecorder.Body.String())
 	return getRecorder.Body.String(), getRecorder.Code
+}
+
+func AdminLogin(router *gin.Engine, username, password string) string {
+	body, _ := LoginUser(router, username, password)
+	var loginResponse map[string]string
+	json.Unmarshal([]byte(body), &loginResponse)
+	return loginResponse["token"]
+}
+
+func setupTestData() map[string]string {
+	username := os.Getenv("NON_ADMIN_USER") + generateRandomString(5)
+	return map[string]string{
+		"username": username,
+		"password": os.Getenv("NON_ADMIN_PASS"),
+		"email":    os.Getenv("EMAIL_USER"),
+	}
+}
+
+func initializeRouterAndControllers(client *mongo.Client) (*gin.Engine, *utils.ProjectManager) {
+	router := gin.Default()
+	pm := utils.NewProjectManager()
+	authController := controllers.NewAuthController(pm)
+	requestController := controllers.NewRequestController(pm)
+	controllers.InitializeAuthRoutes(router, client, authController)
+	controllers.InitializeRequestRoutes(router, client, requestController)
+	return router, pm
 }
