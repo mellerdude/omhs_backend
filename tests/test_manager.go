@@ -43,3 +43,14 @@ func (tm *TestManager) PrintSummary() {
 	logrus.Infof("[%s] Tests Summary: Tests: %d Passed: %d Failed: %d",
 		tm.suiteName, totalTests, tm.passedCount, tm.failedCount)
 }
+
+// PrintOverallSummary prints the overall summary of all test suites
+func PrintOverallSummary() {
+	var totalTests, totalPassed, totalFailed int32
+	for _, tm := range managers {
+		totalTests += tm.passedCount + tm.failedCount
+		totalPassed += tm.passedCount
+		totalFailed += tm.failedCount
+	}
+	logrus.Infof("[Overall] Tests Summary: Tests: %d Passed: %d Failed: %d", totalTests, totalPassed, totalFailed)
+}

@@ -22,6 +22,8 @@ func TestMain(m *testing.M) {
 	authTestManager.PrintSummary()
 	requestsTestManager.PrintSummary()
 
+	PrintOverallSummary()
+
 	// Exit with the appropriate code
 	os.Exit(exitCode)
 }
