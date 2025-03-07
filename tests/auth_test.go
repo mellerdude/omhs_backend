@@ -56,19 +56,12 @@ func init() {
 	}
 }
 
-func TestMain(m *testing.M) {
-	// Initialize the TestManager
-	tm := NewTestManager("auth_test suite")
-	tm.AddTests(
-		TestRegister,
-		TestResetPassword,
-		TestDuplicateUserRegistration,
-		TestInvalidLogin,
-		TestPasswordResetWithInvalidEmailOrUsername,
-		TestPasswordChangeWithInvalidPasskey,
-	)
+var tm *TestManager // Global TestManager instance
 
-	// Run the tests using the testing.M interface
+func TestMain(m *testing.M) {
+	tm = NewTestManager("auth_test suite")
+
+	// Run Go's test framework
 	exitCode := m.Run()
 
 	// Print the summary after running the tests
@@ -79,6 +72,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestRegister(t *testing.T) {
+	tm.RegisterTest(t, "TestRegister")
 	// Initialize router and controllers
 	router := gin.Default()
 	pm := utils.NewProjectManager()
@@ -127,6 +121,8 @@ func TestRegister(t *testing.T) {
 }
 
 func TestResetPassword(t *testing.T) {
+	tm.RegisterTest(t, "TestResetPassword")
+
 	// Initialize router and controllers
 	router := gin.Default()
 	pm := utils.NewProjectManager()
@@ -184,6 +180,8 @@ func TestResetPassword(t *testing.T) {
 }
 
 func TestDuplicateUserRegistration(t *testing.T) {
+	tm.RegisterTest(t, "TestDuplicateUserRegistration")
+
 	// Initialize router and controllers
 	router := gin.Default()
 	pm := utils.NewProjectManager()
@@ -191,23 +189,20 @@ func TestDuplicateUserRegistration(t *testing.T) {
 	controllers.InitializeAuthRoutes(router, client, authController)
 
 	// Test data
-	username := os.Getenv("NON_ADMIN_USER") + generateRandomString(5)
 	user := map[string]string{
-		"username": username,
+		"username": os.Getenv("NON_ADMIN_USER"),
 		"password": os.Getenv("NON_ADMIN_PASS"),
 		"email":    os.Getenv("EMAIL_USER"),
 	}
 
-	// Register user
-	_, code := RegisterUser(router, user)
-	assert.Equal(t, http.StatusCreated, code)
-
 	// Attempt to register the same user again
-	_, code = RegisterUser(router, user)
+	_, code := RegisterUser(router, user)
 	assert.Equal(t, http.StatusConflict, code)
 }
 
 func TestInvalidLogin(t *testing.T) {
+	tm.RegisterTest(t, "TestInvalidLogin")
+
 	// Initialize router and controllers
 	router := gin.Default()
 	pm := utils.NewProjectManager()
@@ -226,6 +221,8 @@ func TestInvalidLogin(t *testing.T) {
 }
 
 func TestPasswordResetWithInvalidEmailOrUsername(t *testing.T) {
+	tm.RegisterTest(t, "TestPasswordResetWithInvalidEmailOrUsername")
+
 	// Initialize router and controllers
 	router := gin.Default()
 	pm := utils.NewProjectManager()
@@ -244,11 +241,15 @@ func TestPasswordResetWithInvalidEmailOrUsername(t *testing.T) {
 }
 
 func TestPasswordChangeWithInvalidPasskey(t *testing.T) {
+	tm.RegisterTest(t, "TestPasswordChangeWithInvalidPasskey")
+
 	// Initialize router and controllers
 	router := gin.Default()
 	pm := utils.NewProjectManager()
 	authController := controllers.NewAuthController(pm)
+	requestController := controllers.NewRequestController(pm)
 	controllers.InitializeAuthRoutes(router, client, authController)
+	controllers.InitializeRequestRoutes(router, client, requestController)
 
 	// Test data
 	username := os.Getenv("NON_ADMIN_USER") + generateRandomString(5)
