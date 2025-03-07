@@ -1,10 +1,8 @@
 package tests
 
 import (
-	"context"
 	"encoding/json"
 	"os"
-	"path/filepath"
 	"testing"
 
 	"omhs-backend/controllers"
@@ -14,65 +12,11 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/joho/godotenv"
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
-
-var (
-	client         *mongo.Client
-	projectManager *utils.ProjectManager
-)
-
-func init() {
-	projectManager = utils.NewProjectManager()
-
-	// Load environment variables from the .env file in the parent directory
-	projectRoot := filepath.Join("..", ".env")
-	err := godotenv.Load(projectRoot)
-	projectManager.Execute(func() (interface{}, error) { return nil, godotenv.Load(projectRoot) }, "Error loading .env file")
-	if err != nil {
-		logrus.Fatalf("Error loading .env file: %v", err)
-	}
-
-	// Retrieve the MongoDB URI from environment variables
-	mongoURI := os.Getenv("MONGO_URI")
-	if mongoURI == "" {
-		logrus.Fatalf("MONGO_URI not set in .env file")
-	}
-
-	// Initialize MongoDB client
-	clientOptions := options.Client().ApplyURI(mongoURI)
-	client, err = mongo.Connect(context.TODO(), clientOptions)
-	if err != nil {
-		logrus.Fatalf("Failed to connect to MongoDB: %v", err)
-	}
-
-	// Ping the primary
-	if err := client.Ping(context.TODO(), nil); err != nil {
-		logrus.Fatalf("Failed to ping MongoDB: %v", err)
-	}
-}
-
-var tm *TestManager // Global TestManager instance
-
-func TestMain(m *testing.M) {
-	tm = NewTestManager("auth_test suite")
-
-	// Run Go's test framework
-	exitCode := m.Run()
-
-	// Print the summary after running the tests
-	tm.PrintSummary()
-
-	// Exit with the appropriate code
-	os.Exit(exitCode)
-}
 
 func TestRegister(t *testing.T) {
-	tm.RegisterTest(t, "TestRegister")
+	authTestManager.RegisterTest(t, "TestRegister")
 	// Initialize router and controllers
 	router := gin.Default()
 	pm := utils.NewProjectManager()
@@ -121,7 +65,7 @@ func TestRegister(t *testing.T) {
 }
 
 func TestResetPassword(t *testing.T) {
-	tm.RegisterTest(t, "TestResetPassword")
+	authTestManager.RegisterTest(t, "TestResetPassword")
 
 	// Initialize router and controllers
 	router := gin.Default()
@@ -180,7 +124,7 @@ func TestResetPassword(t *testing.T) {
 }
 
 func TestDuplicateUserRegistration(t *testing.T) {
-	tm.RegisterTest(t, "TestDuplicateUserRegistration")
+	authTestManager.RegisterTest(t, "TestDuplicateUserRegistration")
 
 	// Initialize router and controllers
 	router := gin.Default()
@@ -201,7 +145,7 @@ func TestDuplicateUserRegistration(t *testing.T) {
 }
 
 func TestInvalidLogin(t *testing.T) {
-	tm.RegisterTest(t, "TestInvalidLogin")
+	authTestManager.RegisterTest(t, "TestInvalidLogin")
 
 	// Initialize router and controllers
 	router := gin.Default()
@@ -221,7 +165,7 @@ func TestInvalidLogin(t *testing.T) {
 }
 
 func TestPasswordResetWithInvalidEmailOrUsername(t *testing.T) {
-	tm.RegisterTest(t, "TestPasswordResetWithInvalidEmailOrUsername")
+	authTestManager.RegisterTest(t, "TestPasswordResetWithInvalidEmailOrUsername")
 
 	// Initialize router and controllers
 	router := gin.Default()
@@ -241,7 +185,7 @@ func TestPasswordResetWithInvalidEmailOrUsername(t *testing.T) {
 }
 
 func TestPasswordChangeWithInvalidPasskey(t *testing.T) {
-	tm.RegisterTest(t, "TestPasswordChangeWithInvalidPasskey")
+	authTestManager.RegisterTest(t, "TestPasswordChangeWithInvalidPasskey")
 
 	// Initialize router and controllers
 	router := gin.Default()
