@@ -34,7 +34,6 @@ func registerUserAndGetToken(t *testing.T, router *gin.Engine, user map[string]s
 }
 
 func TestRegister(t *testing.T) {
-	authTestManager.RegisterTest(t, "TestRegister")
 	router, _ := initializeRouterAndControllers(client)
 
 	user := setupTestData()
@@ -44,10 +43,11 @@ func TestRegister(t *testing.T) {
 
 	_, code := DeleteUser(router, registeredUser.ID.Hex(), adminToken)
 	assert.Equal(t, http.StatusOK, code)
+
+	authTestManager.RegisterTest(t, "TestRegister")
 }
 
 func TestResetPassword(t *testing.T) {
-	authTestManager.RegisterTest(t, "TestResetPassword")
 	router, _ := initializeRouterAndControllers(client)
 
 	user := setupTestData()
@@ -71,10 +71,11 @@ func TestResetPassword(t *testing.T) {
 
 	_, code = DeleteUser(router, registeredUser.ID.Hex(), adminToken)
 	assert.Equal(t, http.StatusOK, code)
+
+	authTestManager.RegisterTest(t, "TestResetPassword")
 }
 
 func TestDuplicateUserRegistration(t *testing.T) {
-	authTestManager.RegisterTest(t, "TestDuplicateUserRegistration")
 	router, _ := initializeRouterAndControllers(client)
 
 	user := map[string]string{
@@ -85,10 +86,11 @@ func TestDuplicateUserRegistration(t *testing.T) {
 
 	_, code := RegisterUser(router, user)
 	assert.Equal(t, http.StatusConflict, code)
+
+	authTestManager.RegisterTest(t, "TestDuplicateUserRegistration")
 }
 
 func TestInvalidLogin(t *testing.T) {
-	authTestManager.RegisterTest(t, "TestInvalidLogin")
 	router, _ := initializeRouterAndControllers(client)
 
 	user := map[string]string{
@@ -98,10 +100,11 @@ func TestInvalidLogin(t *testing.T) {
 
 	_, code := LoginUser(router, user["username"], user["password"])
 	assert.Equal(t, http.StatusUnauthorized, code)
+
+	authTestManager.RegisterTest(t, "TestInvalidLogin")
 }
 
 func TestPasswordResetWithInvalidEmailOrUsername(t *testing.T) {
-	authTestManager.RegisterTest(t, "TestPasswordResetWithInvalidEmailOrUsername")
 	router, _ := initializeRouterAndControllers(client)
 
 	request := map[string]string{
@@ -111,10 +114,11 @@ func TestPasswordResetWithInvalidEmailOrUsername(t *testing.T) {
 
 	_, code := ResetPassword(router, request["email"], request["username"])
 	assert.Equal(t, http.StatusBadRequest, code)
+
+	authTestManager.RegisterTest(t, "TestPasswordResetWithInvalidEmailOrUsername")
 }
 
 func TestPasswordChangeWithInvalidPasskey(t *testing.T) {
-	authTestManager.RegisterTest(t, "TestPasswordChangeWithInvalidPasskey")
 	router, _ := initializeRouterAndControllers(client)
 
 	user := setupTestData()
@@ -130,4 +134,6 @@ func TestPasswordChangeWithInvalidPasskey(t *testing.T) {
 
 	_, code = DeleteUser(router, registeredUser.ID.Hex(), adminToken)
 	assert.Equal(t, http.StatusOK, code)
+
+	authTestManager.RegisterTest(t, "TestPasswordChangeWithInvalidPasskey")
 }

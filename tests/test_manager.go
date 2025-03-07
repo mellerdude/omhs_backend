@@ -2,7 +2,6 @@
 package tests
 
 import (
-	"sync/atomic"
 	"testing"
 
 	"github.com/sirupsen/logrus"
@@ -29,12 +28,11 @@ func GetTestManager(suiteName string) *TestManager {
 
 // RegisterTest tracks the result of a test
 func (tm *TestManager) RegisterTest(t *testing.T, testName string) {
-	logrus.Infof("Running test %s", testName)
 	if t.Failed() {
-		atomic.AddInt32(&tm.failedCount, 1)
+		tm.failedCount++
 		logrus.Infof("Test %s failed.", testName)
 	} else {
-		atomic.AddInt32(&tm.passedCount, 1)
+		tm.passedCount++
 		logrus.Infof("Test %s passed.", testName)
 	}
 }

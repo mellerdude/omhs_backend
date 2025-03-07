@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"omhs-backend/controllers"
+	"omhs-backend/models"
 	"omhs-backend/utils"
 	"os"
 	"time"
@@ -128,4 +129,48 @@ func initializeRouterAndControllers(client *mongo.Client) (*gin.Engine, *utils.P
 	controllers.InitializeAuthRoutes(router, client, authController)
 	controllers.InitializeRequestRoutes(router, client, requestController)
 	return router, pm
+}
+
+func createDocument(router *gin.Engine, database, collection, adminToken string, doc models.Document) (string, int) {
+	docJSON, _ := json.Marshal(doc)
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("POST", "/"+database+"/"+collection, bytes.NewBuffer(docJSON))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+adminToken)
+	router.ServeHTTP(w, req)
+
+	logrus.Infof("Create Document Response: %s", w.Body.String())
+	return w.Body.String(), w.Code
+}
+
+func getDocument(router *gin.Engine, database, collection, docID, adminToken string) (string, int) {
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/"+database+"/"+collection+"/"+docID, nil)
+	req.Header.Set("Authorization", "Bearer "+adminToken)
+	router.ServeHTTP(w, req)
+
+	logrus.Infof("Get Document Response: %s", w.Body.String())
+	return w.Body.String(), w.Code
+}
+
+func updateDocument(router *gin.Engine, database, collection, docID, adminToken string, doc models.Document) (string, int) {
+	docJSON, _ := json.Marshal(doc)
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("PUT", "/"+database+"/"+collection+"/"+docID, bytes.NewBuffer(docJSON))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+adminToken)
+	router.ServeHTTP(w, req)
+
+	logrus.Infof("Update Document Response: %s", w.Body.String())
+	return w.Body.String(), w.Code
+}
+
+func deleteDocument(router *gin.Engine, database, collection, docID, adminToken string) (string, int) {
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("DELETE", "/"+database+"/"+collection+"/"+docID, nil)
+	req.Header.Set("Authorization", "Bearer "+adminToken)
+	router.ServeHTTP(w, req)
+
+	logrus.Infof("Delete Document Response: %s", w.Body.String())
+	return w.Body.String(), w.Code
 }
