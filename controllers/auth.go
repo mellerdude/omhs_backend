@@ -53,6 +53,17 @@ func (ac *AuthController) registerUser(c *gin.Context) {
 		return
 	}
 
+	collection := authClient.Database("users").Collection("authentication")
+
+	// Check if the username already exists
+	var existingUser models.User
+	err := collection.FindOne(context.TODO(), bson.M{"username": user.Username}).Decode(&existingUser)
+	if err == nil {
+		logrus.Errorf("Username already exists: %s", user.Username)
+		c.JSON(http.StatusConflict, gin.H{"error": "Username already exists"})
+		return
+	}
+
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	if err != nil {
 		logrus.Errorf("Failed to hash password: %v", err)
@@ -63,8 +74,6 @@ func (ac *AuthController) registerUser(c *gin.Context) {
 	user.Password = string(hashedPassword)
 	user.ID = primitive.NewObjectID()
 	user.IsAdmin = false // Default to false
-
-	collection := authClient.Database("users").Collection("authentication") // Use the local client variable
 
 	ac.pm.Execute(func() (interface{}, error) {
 		return collection.InsertOne(context.TODO(), user)
@@ -173,7 +182,7 @@ func (ac *AuthController) resetPassword(c *gin.Context) {
 
 	subject := "Password Reset Passkey"
 	message := fmt.Sprintf("Your passkey for resetting your password is: %s", passkey)
-	err = sendEmail(user.Email, subject, message)
+	err = SendEmail(user.Email, subject, message)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to send email", "details": err.Error()})
 		return
@@ -189,6 +198,7 @@ func (ac *AuthController) changePassword(c *gin.Context) {
 
 	type ChangePasswordRequest struct {
 		Email       string `json:"email"`
+		Username    string `json:"username"`
 		Passkey     string `json:"passkey"`
 		NewPassword string `json:"newPassword"`
 	}
@@ -204,12 +214,12 @@ func (ac *AuthController) changePassword(c *gin.Context) {
 
 	var user models.User
 	ac.pm.Execute(func() (interface{}, error) {
-		err := collection.FindOne(context.TODO(), bson.M{"email": request.Email}).Decode(&user)
+		err := collection.FindOne(context.TODO(), bson.M{"email": request.Email, "username": request.Username}).Decode(&user)
 		return user, err
-	}, "Failed to find user by email")
+	}, "Failed to find user by email and username")
 	if user == (models.User{}) {
-		logrus.Warnf("Email not found: %s", request.Email)
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Email not found"})
+		logrus.Warnf("Email or username not found: %s, %s", request.Email, request.Username)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Email or username not found"})
 		return
 	}
 

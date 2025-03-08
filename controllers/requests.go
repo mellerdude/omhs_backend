@@ -89,7 +89,14 @@ func (rc *RequestController) createDocument(c *gin.Context) {
 func (rc *RequestController) getDocument(c *gin.Context) {
 	logrus.Info("Retrieving a document by ID")
 
-	if _, err := rc.authenticateToken(c); err != nil {
+	authenticatedUser, err := rc.authenticateToken(c)
+	if err != nil {
+		return
+	}
+
+	if !authenticatedUser.IsAdmin {
+		logrus.Warnf("Unauthorized attempt to retrieve document by user: %s", authenticatedUser.Username)
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
 
@@ -97,15 +104,22 @@ func (rc *RequestController) getDocument(c *gin.Context) {
 	collectionName := c.Param("collection")
 	collection := requestClient.Database(databaseName).Collection(collectionName)
 
-	var doc models.Document
+	var doc bson.M
 	rc.pm.Execute(func() (interface{}, error) {
 		id, err := primitive.ObjectIDFromHex(c.Param("id"))
 		if err != nil {
+			logrus.Errorf("Invalid document ID: %v", err)
 			return nil, err
 		}
-		return nil, collection.FindOne(context.TODO(), bson.M{"_id": id}).Decode(&doc)
+		err = collection.FindOne(context.TODO(), bson.M{"_id": id}).Decode(&doc)
+		if err != nil {
+			logrus.Errorf("Failed to retrieve document: %v", err)
+			return nil, err
+		}
+		return doc, nil
 	}, "Failed to retrieve document")
 
+	logrus.Infof("Document retrieved: %+v", doc)
 	c.JSON(http.StatusOK, doc)
 }
 
@@ -155,13 +169,24 @@ func (rc *RequestController) deleteDocument(c *gin.Context) {
 	collectionName := c.Param("collection")
 	collection := requestClient.Database(databaseName).Collection(collectionName)
 
+	logrus.Infof("Deleting document from database: %s, collection: %s, with ID: %s", databaseName, collectionName, c.Param("id"))
+
 	rc.pm.Execute(func() (interface{}, error) {
 		id, err := primitive.ObjectIDFromHex(c.Param("id"))
 		if err != nil {
+			logrus.Errorf("Invalid document ID: %v", err)
 			return nil, err
 		}
 		result, err := collection.DeleteOne(context.TODO(), bson.M{"_id": id})
-		return result, err
+		if err != nil {
+			logrus.Errorf("Failed to delete document: %v", err)
+			return nil, err
+		}
+		if result.DeletedCount == 0 {
+			logrus.Warnf("No document found with ID: %s", c.Param("id"))
+			return nil, mongo.ErrNoDocuments
+		}
+		return result, nil
 	}, "Failed to delete document")
 
 	c.JSON(http.StatusOK, gin.H{"message": "Document deleted"})
