@@ -182,7 +182,7 @@ func (ac *AuthController) resetPassword(c *gin.Context) {
 
 	subject := "Password Reset Passkey"
 	message := fmt.Sprintf("Your passkey for resetting your password is: %s", passkey)
-	err = sendEmail(user.Email, subject, message)
+	err = SendEmail(user.Email, subject, message)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to send email", "details": err.Error()})
 		return
