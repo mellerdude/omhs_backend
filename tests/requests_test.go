@@ -3,10 +3,9 @@ package tests
 import (
 	"encoding/json"
 	"net/http"
+	"omhs-backend/internal/requests"
 	"os"
 	"testing"
-
-	"omhs-backend/models"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -17,7 +16,7 @@ func TestCreateDocument(t *testing.T) {
 
 	adminToken := AdminLogin(router, os.Getenv("ADMIN_USER"), os.Getenv("ADMIN_PASS"))
 
-	doc := models.Document{
+	doc := requests.Document{
 		Data: map[string]interface{}{
 			"field1": "value1",
 			"field2": "value2",
@@ -25,9 +24,9 @@ func TestCreateDocument(t *testing.T) {
 	}
 
 	body, code := createDocument(router, "testdb", "testcollection", adminToken, doc)
-	assert.Equal(t, http.StatusOK, code)
+	assert.Equal(t, http.StatusCreated, code)
 
-	var createdDoc models.Document
+	var createdDoc requests.Document
 	json.Unmarshal([]byte(body), &createdDoc)
 	assert.Equal(t, doc.Data["field1"], createdDoc.Data["field1"])
 	assert.Equal(t, doc.Data["field2"], createdDoc.Data["field2"])
@@ -49,7 +48,7 @@ func TestGetDocument(t *testing.T) {
 	field2 := generateRandomString(10)
 	value1 := generateRandomString(10)
 	value2 := generateRandomString(10)
-	doc := models.Document{
+	doc := requests.Document{
 		Data: map[string]interface{}{
 			field1: value1,
 			field2: value2,
@@ -57,15 +56,15 @@ func TestGetDocument(t *testing.T) {
 	}
 
 	body, code := createDocument(router, "testdb", "testcollection", adminToken, doc)
-	assert.Equal(t, http.StatusOK, code)
+	assert.Equal(t, http.StatusCreated, code)
 
-	var createdDoc models.Document
+	var createdDoc requests.Document
 	json.Unmarshal([]byte(body), &createdDoc)
 
 	body, code = getDocument(router, "testdb", "testcollection", createdDoc.ID.Hex(), adminToken)
 	assert.Equal(t, http.StatusOK, code)
 
-	var retrievedDoc models.Document
+	var retrievedDoc requests.Document
 	json.Unmarshal([]byte(body), &retrievedDoc)
 	assert.Equal(t, createdDoc.Data[field1], retrievedDoc.Data[field1])
 	assert.Equal(t, createdDoc.Data[field2], retrievedDoc.Data[field2])
@@ -83,7 +82,7 @@ func TestUpdateDocument(t *testing.T) {
 
 	adminToken := AdminLogin(router, os.Getenv("ADMIN_USER"), os.Getenv("ADMIN_PASS"))
 
-	doc := models.Document{
+	doc := requests.Document{
 		Data: map[string]interface{}{
 			"field1": "value1",
 			"field2": "value2",
@@ -91,12 +90,12 @@ func TestUpdateDocument(t *testing.T) {
 	}
 
 	body, code := createDocument(router, "testdb", "testcollection", adminToken, doc)
-	assert.Equal(t, http.StatusOK, code)
+	assert.Equal(t, http.StatusCreated, code)
 
-	var createdDoc models.Document
+	var createdDoc requests.Document
 	json.Unmarshal([]byte(body), &createdDoc)
 
-	updatedDoc := models.Document{
+	updatedDoc := requests.Document{
 		Data: map[string]interface{}{
 			"field1": "new_value1",
 			"field2": "new_value2",
@@ -106,7 +105,7 @@ func TestUpdateDocument(t *testing.T) {
 	body, code = updateDocument(router, "testdb", "testcollection", createdDoc.ID.Hex(), adminToken, updatedDoc)
 	assert.Equal(t, http.StatusOK, code)
 
-	var updatedDocResponse models.Document
+	var updatedDocResponse requests.Document
 	json.Unmarshal([]byte(body), &updatedDocResponse)
 	assert.Equal(t, updatedDoc.Data["field1"], updatedDocResponse.Data["field1"])
 	assert.Equal(t, updatedDoc.Data["field2"], updatedDocResponse.Data["field2"])
@@ -124,7 +123,7 @@ func TestDeleteDocument(t *testing.T) {
 
 	adminToken := AdminLogin(router, os.Getenv("ADMIN_USER"), os.Getenv("ADMIN_PASS"))
 
-	doc := models.Document{
+	doc := requests.Document{
 		Data: map[string]interface{}{
 			"field1": "value1",
 			"field2": "value2",
@@ -132,9 +131,9 @@ func TestDeleteDocument(t *testing.T) {
 	}
 
 	body, code := createDocument(router, "testdb", "testcollection", adminToken, doc)
-	assert.Equal(t, http.StatusOK, code)
+	assert.Equal(t, http.StatusCreated, code)
 
-	var createdDoc models.Document
+	var createdDoc requests.Document
 	json.Unmarshal([]byte(body), &createdDoc)
 
 	_, code = deleteDocument(router, "testdb", "testcollection", createdDoc.ID.Hex(), adminToken)

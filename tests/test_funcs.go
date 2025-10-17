@@ -6,15 +6,16 @@ import (
 	"math/rand"
 	"net/http"
 	"net/http/httptest"
-	"omhs-backend/controllers"
-	"omhs-backend/models"
-	"omhs-backend/utils"
 	"os"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/mongo"
+
+	"omhs-backend/internal/auth"
+	"omhs-backend/internal/requests"
+	"omhs-backend/internal/utils"
 )
 
 func generateRandomString(n int) string {
@@ -30,7 +31,7 @@ func generateRandomString(n int) string {
 func RegisterUser(router *gin.Engine, user map[string]string) (string, int) {
 	userJSON, _ := json.Marshal(user)
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("POST", "/register", bytes.NewBuffer(userJSON))
+	req, _ := http.NewRequest("POST", auth.BasePath+"/register", bytes.NewBuffer(userJSON))
 	req.Header.Set("Content-Type", "application/json")
 	router.ServeHTTP(w, req)
 
@@ -43,7 +44,7 @@ func LoginUser(router *gin.Engine, username, password string) (string, int) {
 		"username": username,
 		"password": password,
 	})
-	loginReq, _ := http.NewRequest("POST", "/login", bytes.NewBuffer(loginReqJSON))
+	loginReq, _ := http.NewRequest("POST", auth.BasePath+"/login", bytes.NewBuffer(loginReqJSON))
 	loginReq.Header.Set("Content-Type", "application/json")
 
 	loginRecorder := httptest.NewRecorder()
@@ -68,7 +69,7 @@ func ResetPassword(router *gin.Engine, email, username string) (string, int) {
 		"email":    email,
 		"username": username,
 	})
-	resetReq, _ := http.NewRequest("POST", "/reset-password", bytes.NewBuffer(resetReqJSON))
+	resetReq, _ := http.NewRequest("POST", auth.BasePath+"/reset-password", bytes.NewBuffer(resetReqJSON))
 	resetReq.Header.Set("Content-Type", "application/json")
 
 	resetRecorder := httptest.NewRecorder()
@@ -85,7 +86,7 @@ func ChangePassword(router *gin.Engine, email, username, passkey, newPassword st
 		"passkey":     passkey,
 		"newPassword": newPassword,
 	})
-	changeReq, _ := http.NewRequest("POST", "/change-password", bytes.NewBuffer(changeReqJSON))
+	changeReq, _ := http.NewRequest("POST", auth.BasePath+"/change-password", bytes.NewBuffer(changeReqJSON))
 	changeReq.Header.Set("Content-Type", "application/json")
 
 	changeRecorder := httptest.NewRecorder()
@@ -124,14 +125,23 @@ func setupTestData() map[string]string {
 func initializeRouterAndControllers(client *mongo.Client) (*gin.Engine, *utils.ProjectManager) {
 	router := gin.Default()
 	pm := utils.NewProjectManager()
-	authController := controllers.NewAuthController(pm)
-	requestController := controllers.NewRequestController(pm)
-	controllers.InitializeAuthRoutes(router, client, authController)
-	controllers.InitializeRequestRoutes(router, client, requestController)
+
+	// --- Auth Module ---
+	authRepo := auth.NewMongoUserRepository(client)
+	authService := auth.NewAuthService(authRepo)
+	authController := auth.NewAuthController(authService)
+	auth.RegisterRoutes(router, authController)
+
+	// --- Requests Module ---
+	requestRepo := requests.NewMongoRequestRepository(client)
+	requestService := requests.NewRequestService(requestRepo)
+	requestController := requests.NewRequestController(requestService)
+	requests.RegisterRoutes(router, requestController)
+
 	return router, pm
 }
 
-func createDocument(router *gin.Engine, database, collection, adminToken string, doc models.Document) (string, int) {
+func createDocument(router *gin.Engine, database, collection, adminToken string, doc requests.Document) (string, int) {
 	docJSON, _ := json.Marshal(doc)
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("POST", "/"+database+"/"+collection, bytes.NewBuffer(docJSON))
@@ -153,7 +163,7 @@ func getDocument(router *gin.Engine, database, collection, docID, adminToken str
 	return w.Body.String(), w.Code
 }
 
-func updateDocument(router *gin.Engine, database, collection, docID, adminToken string, doc models.Document) (string, int) {
+func updateDocument(router *gin.Engine, database, collection, docID, adminToken string, doc requests.Document) (string, int) {
 	docJSON, _ := json.Marshal(doc)
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("PUT", "/"+database+"/"+collection+"/"+docID, bytes.NewBuffer(docJSON))

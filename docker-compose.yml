@@ -1,19 +1,34 @@
+version: "3.9"
+
 services:
   backend:
-    image: mellerdude/omhs-site:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: omhs-backend
     ports:
       - "8080:8080"
     env_file:
       - .env
     depends_on:
       - mongo
+    restart: unless-stopped
+    networks:
+      - omhs-net
 
   mongo:
     image: mongo:latest
+    container_name: mongo
     ports:
       - "27017:27017"
     volumes:
       - mongo-data:/data/db
+    networks:
+      - omhs-net
 
 volumes:
   mongo-data:
+
+networks:
+  omhs-net:
+    driver: bridge

@@ -2,22 +2,21 @@ package tests
 
 import (
 	"encoding/json"
+	"net/http"
 	"os"
 	"testing"
 
-	"omhs-backend/models"
-
-	"net/http"
-
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
+
+	"omhs-backend/internal/auth"
 )
 
-func registerUserAndGetToken(t *testing.T, router *gin.Engine, user map[string]string) (models.User, string) {
+func registerUserAndGetToken(t *testing.T, router *gin.Engine, user map[string]string) (auth.User, string) {
 	body, code := RegisterUser(router, user)
 	assert.Equal(t, http.StatusCreated, code)
 
-	var registeredUser models.User
+	var registeredUser auth.User
 	json.Unmarshal([]byte(body), &registeredUser)
 	assert.Equal(t, user["username"], registeredUser.Username)
 	assert.Equal(t, user["email"], registeredUser.Email)
@@ -61,8 +60,14 @@ func TestResetPassword(t *testing.T) {
 	body, code := GetPasskey(router, "users", "authentication", registeredUser.ID.Hex(), adminToken)
 	assert.Equal(t, http.StatusOK, code)
 
+	var root map[string]json.RawMessage
+	json.Unmarshal([]byte(body), &root)
+
+	// Unmarshal only the "data" field directly into userDoc
 	var userDoc map[string]interface{}
-	json.Unmarshal([]byte(body), &userDoc)
+	if data, ok := root["data"]; ok {
+		json.Unmarshal(data, &userDoc)
+	}
 	passkey, ok := userDoc["passkey"].(string)
 	assert.True(t, ok, "Passkey should not be empty")
 
