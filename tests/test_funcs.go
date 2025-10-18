@@ -142,7 +142,8 @@ func initializeRouterAndControllers(client *mongo.Client) (*gin.Engine, *utils.P
 }
 
 func createDocument(router *gin.Engine, database, collection, adminToken string, doc requests.Document) (string, int) {
-	docJSON, _ := json.Marshal(doc)
+	docJSON, _ := json.Marshal(doc.Data)
+
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("POST", "/"+database+"/"+collection, bytes.NewBuffer(docJSON))
 	req.Header.Set("Content-Type", "application/json")

@@ -19,6 +19,10 @@ func (s *RequestService) Create(database, collection string, data map[string]int
 		return nil, errors.New("database and collection are required")
 	}
 
+	if inner, ok := data["data"].(map[string]interface{}); ok {
+		data = inner
+	}
+
 	doc := Document{
 		ID:   primitive.NewObjectID(),
 		Data: data,
@@ -27,6 +31,7 @@ func (s *RequestService) Create(database, collection string, data map[string]int
 	if err := s.repo.Create(database, collection, doc); err != nil {
 		return nil, err
 	}
+
 	return &doc, nil
 }
 

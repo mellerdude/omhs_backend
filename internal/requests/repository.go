@@ -42,8 +42,14 @@ func (r *MongoRequestRepository) Get(database, collection string, id primitive.O
 		return nil, err
 	}
 
-	data, ok := raw["data"].(map[string]interface{})
-	if !ok {
+	var data map[string]interface{}
+
+	switch v := raw["data"].(type) {
+	case map[string]interface{}:
+		data = v
+	case primitive.M:
+		data = map[string]interface{}(v) // convert cleanly
+	default:
 		// fallback: everything except _id becomes data
 		delete(raw, "_id")
 		data = raw
