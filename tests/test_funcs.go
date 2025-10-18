@@ -18,6 +18,8 @@ import (
 	"omhs-backend/internal/utils"
 )
 
+const apiPrefix = "/api"
+
 func generateRandomString(n int) string {
 	rand.Seed(time.Now().UnixNano())
 	const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
@@ -31,7 +33,7 @@ func generateRandomString(n int) string {
 func RegisterUser(router *gin.Engine, user map[string]string) (string, int) {
 	userJSON, _ := json.Marshal(user)
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("POST", auth.BasePath+"/register", bytes.NewBuffer(userJSON))
+	req, _ := http.NewRequest("POST", apiPrefix+auth.BasePath+"/register", bytes.NewBuffer(userJSON))
 	req.Header.Set("Content-Type", "application/json")
 	router.ServeHTTP(w, req)
 
@@ -44,7 +46,7 @@ func LoginUser(router *gin.Engine, username, password string) (string, int) {
 		"username": username,
 		"password": password,
 	})
-	loginReq, _ := http.NewRequest("POST", auth.BasePath+"/login", bytes.NewBuffer(loginReqJSON))
+	loginReq, _ := http.NewRequest("POST", apiPrefix+auth.BasePath+"/login", bytes.NewBuffer(loginReqJSON))
 	loginReq.Header.Set("Content-Type", "application/json")
 
 	loginRecorder := httptest.NewRecorder()
@@ -55,7 +57,7 @@ func LoginUser(router *gin.Engine, username, password string) (string, int) {
 }
 
 func DeleteUser(router *gin.Engine, userID, adminToken string) (string, int) {
-	deleteReq, _ := http.NewRequest("DELETE", "/users/authentication/"+userID, nil)
+	deleteReq, _ := http.NewRequest("DELETE", apiPrefix+"/users/authentication/"+userID, nil)
 	deleteReq.Header.Set("Authorization", "Bearer "+adminToken)
 	deleteRecorder := httptest.NewRecorder()
 	router.ServeHTTP(deleteRecorder, deleteReq)
@@ -69,7 +71,7 @@ func ResetPassword(router *gin.Engine, email, username string) (string, int) {
 		"email":    email,
 		"username": username,
 	})
-	resetReq, _ := http.NewRequest("POST", auth.BasePath+"/reset-password", bytes.NewBuffer(resetReqJSON))
+	resetReq, _ := http.NewRequest("POST", apiPrefix+auth.BasePath+"/reset-password", bytes.NewBuffer(resetReqJSON))
 	resetReq.Header.Set("Content-Type", "application/json")
 
 	resetRecorder := httptest.NewRecorder()
@@ -86,7 +88,7 @@ func ChangePassword(router *gin.Engine, email, username, passkey, newPassword st
 		"passkey":     passkey,
 		"newPassword": newPassword,
 	})
-	changeReq, _ := http.NewRequest("POST", auth.BasePath+"/change-password", bytes.NewBuffer(changeReqJSON))
+	changeReq, _ := http.NewRequest("POST", apiPrefix+auth.BasePath+"/change-password", bytes.NewBuffer(changeReqJSON))
 	changeReq.Header.Set("Content-Type", "application/json")
 
 	changeRecorder := httptest.NewRecorder()
@@ -97,7 +99,7 @@ func ChangePassword(router *gin.Engine, email, username, passkey, newPassword st
 }
 
 func GetPasskey(router *gin.Engine, database, collection, userID, adminToken string) (string, int) {
-	getReq, _ := http.NewRequest("GET", "/"+database+"/"+collection+"/"+userID, nil)
+	getReq, _ := http.NewRequest("GET", apiPrefix+"/"+database+"/"+collection+"/"+userID, nil)
 	getReq.Header.Set("Authorization", "Bearer "+adminToken)
 	getRecorder := httptest.NewRecorder()
 	router.ServeHTTP(getRecorder, getReq)
@@ -126,17 +128,19 @@ func initializeRouterAndControllers(client *mongo.Client) (*gin.Engine, *utils.P
 	router := gin.Default()
 	pm := utils.NewProjectManager()
 
+	api := router.Group("/api")
+
 	// --- Auth Module ---
 	authRepo := auth.NewMongoUserRepository(client)
 	authService := auth.NewAuthService(authRepo)
 	authController := auth.NewAuthController(authService)
-	auth.RegisterRoutes(router, authController)
+	auth.RegisterRoutes(api, authController)
 
 	// --- Requests Module ---
 	requestRepo := requests.NewMongoRequestRepository(client)
 	requestService := requests.NewRequestService(requestRepo)
 	requestController := requests.NewRequestController(requestService)
-	requests.RegisterRoutes(router, requestController)
+	requests.RegisterRoutes(api, requestController)
 
 	return router, pm
 }
@@ -145,7 +149,7 @@ func createDocument(router *gin.Engine, database, collection, adminToken string,
 	docJSON, _ := json.Marshal(doc.Data)
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("POST", "/"+database+"/"+collection, bytes.NewBuffer(docJSON))
+	req, _ := http.NewRequest("POST", apiPrefix+"/"+database+"/"+collection, bytes.NewBuffer(docJSON))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+adminToken)
 	router.ServeHTTP(w, req)
@@ -156,7 +160,7 @@ func createDocument(router *gin.Engine, database, collection, adminToken string,
 
 func getDocument(router *gin.Engine, database, collection, docID, adminToken string) (string, int) {
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/"+database+"/"+collection+"/"+docID, nil)
+	req, _ := http.NewRequest("GET", apiPrefix+"/"+database+"/"+collection+"/"+docID, nil)
 	req.Header.Set("Authorization", "Bearer "+adminToken)
 	router.ServeHTTP(w, req)
 
@@ -167,7 +171,7 @@ func getDocument(router *gin.Engine, database, collection, docID, adminToken str
 func updateDocument(router *gin.Engine, database, collection, docID, adminToken string, doc requests.Document) (string, int) {
 	docJSON, _ := json.Marshal(doc)
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("PUT", "/"+database+"/"+collection+"/"+docID, bytes.NewBuffer(docJSON))
+	req, _ := http.NewRequest("PUT", apiPrefix+"/"+database+"/"+collection+"/"+docID, bytes.NewBuffer(docJSON))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+adminToken)
 	router.ServeHTTP(w, req)
@@ -178,7 +182,7 @@ func updateDocument(router *gin.Engine, database, collection, docID, adminToken 
 
 func deleteDocument(router *gin.Engine, database, collection, docID, adminToken string) (string, int) {
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("DELETE", "/"+database+"/"+collection+"/"+docID, nil)
+	req, _ := http.NewRequest("DELETE", apiPrefix+"/"+database+"/"+collection+"/"+docID, nil)
 	req.Header.Set("Authorization", "Bearer "+adminToken)
 	router.ServeHTTP(w, req)
 

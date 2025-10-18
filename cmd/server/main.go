@@ -69,13 +69,17 @@ func setupCORS(r *gin.Engine, pm *utils.ProjectManager) {
 }
 
 func initRoutes(r *gin.Engine, client *mongo.Client) {
+	api := r.Group("/api")
+
+	// --- Auth Module ---
 	authRepo := auth.NewMongoUserRepository(client)
 	authService := auth.NewAuthService(authRepo)
 	authController := auth.NewAuthController(authService)
-	auth.RegisterRoutes(r, authController)
+	auth.RegisterRoutes(api, authController)
 
+	// --- Requests Module ---
 	reqRepo := requests.NewMongoRequestRepository(client)
 	reqService := requests.NewRequestService(reqRepo)
 	reqController := requests.NewRequestController(reqService)
-	requests.RegisterRoutes(r, reqController)
+	requests.RegisterRoutes(api, reqController)
 }

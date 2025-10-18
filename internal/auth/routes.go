@@ -4,7 +4,7 @@ import "github.com/gin-gonic/gin"
 
 const BasePath = "/auth"
 
-func RegisterRoutes(r *gin.Engine, controller *AuthController) {
+func RegisterRoutes(r *gin.RouterGroup, controller *AuthController) {
 	group := r.Group(BasePath)
 	{
 		group.POST("/register", controller.Register)
