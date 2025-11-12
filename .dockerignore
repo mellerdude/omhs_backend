@@ -12,7 +12,6 @@
 # Environment & Secrets
 .env
 .env.*
-!.env.example
 
 # Build & Runtime Junk
 bin/
