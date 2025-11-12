@@ -2,15 +2,17 @@ services:
   backend:
     build:
       context: .
-      dockerfile: Dockerfile
-    container_name: omhs-backend
+      dockerfile: dockerfile.dev
+    container_name: omhs-backend-dev
     ports:
       - "8080:8080"
     env_file:
       - .env
+    volumes:
+      - .:/app
+      - /app/go/pkg/mod
     depends_on:
       - mongo
-    restart: unless-stopped
     networks:
       - omhs-net
 

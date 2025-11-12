@@ -60,7 +60,9 @@ func setupCORS(r *gin.Engine, pm *utils.ProjectManager) {
 	pm.Execute(func() error { return r.SetTrustedProxies([]string{"127.0.0.1"}) }, "Failed to set trusted proxies")
 
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:3000"},
+		AllowOrigins: []string{
+			"http://localhost:3000",
+			"http://localhost:4200"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE"},
 		AllowHeaders:     []string{"Origin", "Authorization", "Content-Type"},
 		ExposeHeaders:    []string{"Content-Length"},

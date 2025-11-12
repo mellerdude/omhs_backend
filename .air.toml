@@ -1,0 +1,29 @@
+# Configuration for Air (https://github.com/air-verse/air)
+
+# Project root
+root = "."
+
+# Air will put all its temp files in this folder
+tmp_dir = "air"
+
+[build]
+  # Build command
+  cmd = "go build -o ./air/main ./cmd/server"
+
+  # Binary Air runs
+  bin = "air/main"
+  full_bin = "air/main"
+
+  # File extensions that trigger rebuild
+  include_ext = ["go", "tpl", "tmpl", "html"]
+
+  # Directories to ignore
+  exclude_dir = ["air", "vendor"]
+
+[log]
+  time = true
+
+[color]
+  app = "cyan"
+  build = "yellow"
+  watcher = "magenta"

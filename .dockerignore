@@ -1,20 +1,41 @@
-# Ignore the .git directory
+# Version Control
 .git
+.gitignore
 
-# Ignore the node_modules directory (if any)
-node_modules
-
-# Ignore the .env file
-.env
-
-# Ignore any log files
-*.log
-
-# Ignore any temporary files or directories
-tmp
-temp
-*.tmp
+# Development Tools & Configs
+.vscode
+.idea
+*.iml
 *.swp
+*~
 
-# Ignore the build output
-main
+# Environment & Secrets
+.env
+.env.*
+!.env.example
+
+# Build & Runtime Junk
+bin/
+pkg/
+tmp/
+tmp_fresh/
+air/
+coverage/
+dist/
+
+# Go Build Cache
+*.exe
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+*.prof
+*.coverprofile
+
+# OS-generated Files
+.DS_Store
+Thumbs.db
+
+# Dev-only Config
+.air.toml
