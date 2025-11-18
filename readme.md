@@ -1,11 +1,11 @@
 # 🧩 OMHS Backend
 
-[![Go](https://img.shields.io/badge/Go-1.25+-00ADD8?logo=go&logoColor=white)](https://golang.org)
-[![Docker](https://img.shields.io/badge/Docker-ready-blue?logo=docker)](https://www.docker.com/)
+[![Go](https://img.shields.io/badge/Go-1.25+-00ADD8?logo=go&logoColor=white)](https://golang.org)  
+[![Docker](https://img.shields.io/badge/Docker-ready-blue?logo=docker)](https://www.docker.com/)  
 [![MongoDB](https://img.shields.io/badge/MongoDB-Atlas%20%2F%20Local-green?logo=mongodb)](https://www.mongodb.com/)
 
-> Backend service for the **OMHS Project**, built with Go, Gin, and MongoDB.  
-> Provides authentication, data management, and integration endpoints for the OMHS platform.
+Backend service for the **OMHS Project**, built with Go, Gin, and MongoDB.  
+Provides authentication, data management, and integration endpoints for the OMHS platform.
 
 ---
 
@@ -13,62 +13,86 @@
 
 The **OMHS backend** exposes REST APIs for authentication, users, and requests.  
 It’s written in **Go**, uses **MongoDB** for storage, and leverages **Gin** as the HTTP router and middleware layer.  
-Docker Compose is used to manage both the backend and the database for local and production setups.
+Docker Compose (via Makefile) is used to manage backend + database for both dev and production.
 
 ---
 
 ## ⚙️ Tech Stack
 
 | Category | Technology |
-|-----------|-------------|
-| Language | [Go 1.25+](https://golang.org) |
-| Framework | [Gin](https://github.com/gin-gonic/gin) |
-| Database | [MongoDB](https://www.mongodb.com/) |
-| Auth | Session tokens (non‑JWT) |
-| Containerization | [Docker](https://www.docker.com/) |
+|----------|-------------|
+| Language | Go 1.25+ |
+| Framework | Gin |
+| Database | MongoDB |
+| Auth | Session tokens (non-JWT) |
+| Containerization | Docker & Docker Compose |
 
 ---
 
-## 🚀 Quick Start
+### 🧩 Requirements
+- Go 1.25+
+- Docker & Docker Compose
+- Make  
+  - macOS/Linux: already installed  
+  - Windows:
 
-### 🧩 Development
+    ```powershell
+    winget install Ezwinports.Make
+    ```
 
-Run the backend and MongoDB locally:
+---
+
+### ▶️ Development
+
+Start backend + MongoDB:
 
 ```bash
-docker compose -f docker-compose.dev.yml up --build
+make omhs-dev
 ```
 
 Stop containers:
 
 ```bash
-docker compose -f docker-compose.dev.yml down
+make omhs-dev-down
 ```
 
-Access backend at:  
-👉 [http://localhost:8080](http://localhost:8080)
+Logs:
+
+```bash
+make omhs-dev-logs
+```
 
 ---
 
-### 🏗️ Production
-
-Build and run the production image:
+### 🏗 Production
 
 ```bash
-docker compose up --build -d
+make omhs-prod
 ```
 
-Stop services:
+---
+
+## 🔧 Most Common Commands
 
 ```bash
-docker compose down
+make omhs-dev       # Start dev environment
+make omhs-dev-down  # Stop dev environment
+make omhs-dev-logs  # View logs
+make omhs-run       # Run Go app locally
+make omhs-build     # Build Go binary
+```
+
+For the full list of available commands:
+
+```bash
+make omhs-help
 ```
 
 ---
 
 ## 🔐 Environment Variables
 
-Your `.env` file (ignored by Git) should include:
+Create a `.env` file:
 
 ```env
 MONGO_URI=mongodb://mongo:27017
@@ -76,28 +100,14 @@ PORT=8080
 TOKEN_EXPIRATION_HOURS=48
 ```
 
-> 📝 **Tip:** Make sure `.env` is included in `.gitignore`.
-
----
-
-## 🧰 Common Commands
-
-| Action | Command |
-|--------|----------|
-| Run dev environment | `docker compose -f docker-compose.dev.yml up --build` |
-| Stop dev containers | `docker compose -f docker-compose.dev.yml down` |
-| Run production | `docker compose up --build -d` |
-| Stop production | `docker compose down` |
-| View logs | `docker compose logs -f backend` |
-
 ---
 
 ## 💡 Notes
 
-- Backend runs on **port 8080**
+- Backend runs on **http://localhost:8080**
 - MongoDB data is persisted via Docker volume
-- CORS is configured for frontend origin `http://localhost:4200`
-- Session tokens are stored and validated via MongoDB (non‑JWT approach)
+- CORS allows `http://localhost:4200`
+- Session tokens are validated using MongoDB (non-JWT)
 
 ---
 
