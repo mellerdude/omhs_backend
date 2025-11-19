@@ -10,17 +10,36 @@ func DefaultKanban() map[string]interface{} {
 					map[string]interface{}{
 						"id":    "todo",
 						"title": "To Do",
-						"tasks": []interface{}{},
+						"tasks": []interface{}{
+							map[string]interface{}{
+								"id":    "t1",
+								"title": "Progress one task",
+							},
+							map[string]interface{}{
+								"id":    "t2",
+								"title": "Create your first list",
+							},
+						},
 					},
 					map[string]interface{}{
 						"id":    "inprogress",
 						"title": "In Progress",
-						"tasks": []interface{}{},
+						"tasks": []interface{}{
+							map[string]interface{}{
+								"id":    "t3",
+								"title": "Learn how the kanban works",
+							},
+						},
 					},
 					map[string]interface{}{
 						"id":    "done",
 						"title": "Done",
-						"tasks": []interface{}{},
+						"tasks": []interface{}{
+							map[string]interface{}{
+								"id":    "t4",
+								"title": "Created Account",
+							},
+						},
 					},
 				},
 			},

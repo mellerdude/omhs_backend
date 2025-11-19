@@ -3,6 +3,7 @@ package kanban
 import (
 	"omhs-backend/internal/requests"
 
+	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -17,9 +18,13 @@ func NewKanbanRepository(req requests.RequestRepository) *KanbanRepository {
 // Load the board JSON for a specific user
 func (r *KanbanRepository) GetKanban(userId primitive.ObjectID) (map[string]interface{}, error) {
 	doc, err := r.req.Get("data", "Kanbans", userId)
+
 	if err != nil {
+		logrus.Warnf("KanbanRepo.GetKanban ERROR for %s → %T: %v",
+			userId.Hex(), err, err)
 		return nil, err
 	}
+
 	return doc.Data, nil
 }
 

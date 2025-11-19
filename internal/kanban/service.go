@@ -1,9 +1,12 @@
 package kanban
 
 import (
+	"errors"
 	"omhs-backend/internal/requests"
 
+	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type KanbanService struct {
@@ -16,10 +19,11 @@ func NewKanbanService(repo KanbanRepository) *KanbanService {
 
 func (s *KanbanService) GetKanban(userId primitive.ObjectID) (map[string]interface{}, error) {
 	data, err := s.repo.GetKanban(userId)
+	logrus.Warnf("KanbanService.GetKanban → repo returned error: %T %v", err, err)
 
 	if err != nil {
-		// If the kanban doc does not exist, auto-create default
-		if err.Error() == "mongo: no documents in result" {
+		// Document doesn't exist → create default
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			defaultData := DefaultKanban()
 
 			_, createErr := s.CreateKanban(userId, defaultData)
@@ -30,7 +34,7 @@ func (s *KanbanService) GetKanban(userId primitive.ObjectID) (map[string]interfa
 			return defaultData, nil
 		}
 
-		// Other real errors
+		// Other errors
 		return nil, err
 	}
 

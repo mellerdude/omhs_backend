@@ -91,8 +91,11 @@ func initRoutes(r *gin.Engine, client *mongo.Client) {
 	kanbanService := kanban.NewKanbanService(*kanbanRepo)
 	kanbanController := kanban.NewKanbanController(kanbanService)
 
-	kanbanGroup := api.Group("/")
+	kanbanGroup := api.Group("")
 	kanbanGroup.Use(middleware.JWTMiddleware())
 	kanban.RegisterRoutes(kanbanGroup, kanbanController)
 
+	for _, ri := range r.Routes() {
+		logrus.Infof("Route registered: %s %s", ri.Method, ri.Path)
+	}
 }
