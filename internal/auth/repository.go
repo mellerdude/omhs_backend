@@ -13,10 +13,10 @@ type UserRepository interface {
 	FindByUsername(username string) (*User, error)
 	FindByEmailAndUsername(email, username string) (*User, error)
 	Create(user *User) error
-	UpdateToken(id primitive.ObjectID, token string, lastLogin time.Time) error
 	UpdatePassword(id primitive.ObjectID, newHash string) error
 	UpdatePasskey(id primitive.ObjectID, passkey string, at time.Time) error
 	InvalidatePasskey(id primitive.ObjectID) error
+	UpdateLastLogin(id primitive.ObjectID, at time.Time) error
 }
 
 type MongoUserRepository struct {
@@ -48,12 +48,6 @@ func (r *MongoUserRepository) Create(user *User) error {
 	return err
 }
 
-func (r *MongoUserRepository) UpdateToken(id primitive.ObjectID, token string, lastLogin time.Time) error {
-	_, err := r.collection().UpdateOne(context.TODO(), bson.M{"_id": id},
-		bson.M{"$set": bson.M{"token": token, "lastLogin": lastLogin}})
-	return err
-}
-
 func (r *MongoUserRepository) UpdatePassword(id primitive.ObjectID, newHash string) error {
 	_, err := r.collection().UpdateOne(context.TODO(), bson.M{"_id": id},
 		bson.M{"$set": bson.M{"password": newHash}, "$unset": bson.M{"passkey": "", "passkeyGeneratedAt": ""}})
@@ -69,5 +63,14 @@ func (r *MongoUserRepository) UpdatePasskey(id primitive.ObjectID, passkey strin
 func (r *MongoUserRepository) InvalidatePasskey(id primitive.ObjectID) error {
 	_, err := r.collection().UpdateOne(context.TODO(), bson.M{"_id": id},
 		bson.M{"$set": bson.M{"passkey": "NOT_PASSKEY"}})
+	return err
+}
+
+func (r *MongoUserRepository) UpdateLastLogin(id primitive.ObjectID, at time.Time) error {
+	_, err := r.collection().UpdateOne(
+		context.TODO(),
+		bson.M{"_id": id},
+		bson.M{"$set": bson.M{"lastLogin": at}},
+	)
 	return err
 }

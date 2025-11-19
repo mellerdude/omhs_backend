@@ -13,7 +13,6 @@ type User struct {
 	Password           string             `bson:"password" json:"password"`
 	Email              string             `bson:"email" json:"email"`
 	IsAdmin            bool               `bson:"isAdmin" json:"isAdmin"`
-	Token              string             `bson:"token" json:"token"`
 	LastLogin          time.Time          `bson:"lastLogin" json:"lastLogin"`
 	Passkey            string             `bson:"passkey" json:"passkey"`
 	PasskeyGeneratedAt time.Time          `bson:"passkeyGeneratedAt" json:"passkeyGeneratedAt"`

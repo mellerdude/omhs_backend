@@ -59,16 +59,12 @@ func (s *AuthService) Login(req LoginRequest) (string, error) {
 		return "", errors.New("invalid username or password")
 	}
 
-	token := user.Token
-	if time.Since(user.LastLogin) > 48*time.Hour || token == "" {
-		token, err = utils.GenerateToken()
-		if err != nil {
-			return "", err
-		}
-	}
+	// update lastLogin
+	s.repo.UpdateLastLogin(user.ID, time.Now())
 
-	user.LastLogin = time.Now()
-	if err := s.repo.UpdateToken(user.ID, token, user.LastLogin); err != nil {
+	// create JWT
+	token, err := utils.GenerateJWT(user.ID.Hex(), user.Username)
+	if err != nil {
 		return "", err
 	}
 

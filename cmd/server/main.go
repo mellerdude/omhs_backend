@@ -3,11 +3,12 @@ package main
 import (
 	"context"
 	"errors"
-	"os"
-
 	"omhs-backend/internal/auth"
+	"omhs-backend/internal/kanban"
+	"omhs-backend/internal/middleware"
 	"omhs-backend/internal/requests"
 	"omhs-backend/internal/utils"
+	"os"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -84,4 +85,14 @@ func initRoutes(r *gin.Engine, client *mongo.Client) {
 	reqService := requests.NewRequestService(reqRepo)
 	reqController := requests.NewRequestController(reqService)
 	requests.RegisterRoutes(api, reqController)
+
+	// --- Kanban Module ---
+	kanbanRepo := kanban.NewKanbanRepository(reqRepo)
+	kanbanService := kanban.NewKanbanService(*kanbanRepo)
+	kanbanController := kanban.NewKanbanController(kanbanService)
+
+	kanbanGroup := api.Group("/")
+	kanbanGroup.Use(middleware.JWTMiddleware())
+	kanban.RegisterRoutes(kanbanGroup, kanbanController)
+
 }
