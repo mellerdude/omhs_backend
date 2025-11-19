@@ -15,7 +15,26 @@ func NewKanbanService(repo KanbanRepository) *KanbanService {
 }
 
 func (s *KanbanService) GetKanban(userId primitive.ObjectID) (map[string]interface{}, error) {
-	return s.repo.GetKanban(userId)
+	data, err := s.repo.GetKanban(userId)
+
+	if err != nil {
+		// If the kanban doc does not exist, auto-create default
+		if err.Error() == "mongo: no documents in result" {
+			defaultData := DefaultKanban()
+
+			_, createErr := s.CreateKanban(userId, defaultData)
+			if createErr != nil {
+				return nil, createErr
+			}
+
+			return defaultData, nil
+		}
+
+		// Other real errors
+		return nil, err
+	}
+
+	return data, nil
 }
 
 func (s *KanbanService) CreateKanban(userId primitive.ObjectID, data map[string]interface{}) (*requests.Document, error) {

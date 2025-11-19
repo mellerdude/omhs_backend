@@ -179,3 +179,67 @@ func TestKanbanUpdate(t *testing.T) {
 	_, code = DeleteUser(router, registeredUser.ID.Hex(), adminToken)
 	assert.Equal(t, http.StatusOK, code)
 }
+
+func TestKanbanLazyCreation(t *testing.T) {
+	router := setupKanbanRouter(client)
+
+	// --- Step 1: Register a new user and get JWT ---
+	user := setupTestData()
+	body, code := RegisterUser(router, user)
+	assert.Equal(t, http.StatusCreated, code)
+
+	var registeredUser auth.User
+	json.Unmarshal([]byte(body), &registeredUser)
+
+	// Login → get JWT
+	body, code = LoginUser(router, user["username"], user["password"])
+	assert.Equal(t, http.StatusOK, code)
+
+	var loginResp map[string]string
+	json.Unmarshal([]byte(body), &loginResp)
+	token := loginResp["token"]
+	assert.NotEmpty(t, token)
+
+	// --- Step 2: GET Kanban (should auto-create) ---
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/api/kanban", nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	var kanbanData map[string]interface{}
+	json.Unmarshal(w.Body.Bytes(), &kanbanData)
+
+	// Must contain a "boards" array
+	boards, ok := kanbanData["boards"]
+	assert.True(t, ok, "Expected default Kanban to contain 'boards'")
+	assert.NotEmpty(t, boards)
+
+	// --- Step 3: Verify document exists in DB (using Requests API) ---
+
+	adminToken := AdminLogin(router, os.Getenv("ADMIN_USER"), os.Getenv("ADMIN_PASS"))
+
+	_, code = GetPasskey(
+		router,
+		"data",
+		"Kanbans",
+		registeredUser.ID.Hex(),
+		adminToken,
+	)
+	assert.Equal(t, http.StatusOK, code)
+
+	// --- Step 4: Cleanup Kanban + User ---
+
+	_, code = deleteDocument(
+		router,
+		"data",
+		"Kanbans",
+		registeredUser.ID.Hex(),
+		adminToken,
+	)
+	assert.Equal(t, http.StatusOK, code)
+
+	_, code = DeleteUser(router, registeredUser.ID.Hex(), adminToken)
+	assert.Equal(t, http.StatusOK, code)
+}
